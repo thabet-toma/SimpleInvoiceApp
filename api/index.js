@@ -172,10 +172,10 @@ app.get('/api/invoices/sale', async (req, res) => {
   try {
     const { tenantId } = req.query;
     let query = `
-      SELECT i.InvoiceID as id, i.InvoiceNumber as number, DATE_FORMAT(i.InvoiceDate, '%Y-%m-%d') as date, i.GrandTotal as total, p.Name as partnerName 
+      SELECT i.SalesInvoiceID as id, i.InvoiceNumber as number, DATE_FORMAT(i.InvoiceDate, '%Y-%m-%d') as date, i.GrandTotal as total, p.Name as partnerName 
       FROM sales_module_invoices i 
       LEFT JOIN partners p ON i.CustomerID = p.PartnerID 
-      WHERE i.TenantID=? ORDER BY i.InvoiceID DESC LIMIT 50`;
+      WHERE i.TenantID=? ORDER BY i.SalesInvoiceID DESC LIMIT 50`;
     const [rows] = await db.query(query, [tenantId || 6]);
     res.json(rows);
   } catch (error) {
@@ -187,10 +187,10 @@ app.get('/api/invoices/purchase', async (req, res) => {
   try {
     const { tenantId } = req.query;
     let query = `
-      SELECT i.InvoiceID as id, i.InvoiceNumber as number, DATE_FORMAT(i.InvoiceDate, '%Y-%m-%d') as date, i.GrandTotal as total, p.Name as partnerName 
+      SELECT i.PurchaseInvoiceID as id, i.InvoiceNumber as number, DATE_FORMAT(i.InvoiceDate, '%Y-%m-%d') as date, i.GrandTotal as total, p.Name as partnerName 
       FROM purchase_invoices i 
       LEFT JOIN partners p ON i.PartnerID = p.PartnerID 
-      WHERE i.TenantID=? ORDER BY i.InvoiceID DESC LIMIT 50`;
+      WHERE i.TenantID=? ORDER BY i.PurchaseInvoiceID DESC LIMIT 50`;
     const [rows] = await db.query(query, [tenantId || 6]);
     res.json(rows);
   } catch (error) {
