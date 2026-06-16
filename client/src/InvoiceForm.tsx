@@ -192,14 +192,22 @@ const InvoiceForm = ({ type }: { type: 'sale' | 'purchase' }) => {
 
         {lines.map((line, index) => (
           <div key={index} className="flex-row line-item" style={{ alignItems: 'center' }}>
-            <select 
-              className="form-input flex-1"
-              value={line.productId}
-              onChange={e => updateLine(index, 'productId', e.target.value)}
-            >
-              <option value="">-- الصنف --</option>
-              {products.map(p => <option key={p.id} value={p.id}>{p.name} (متوفر: {p.stock || 0})</option>)}
-            </select>
+            <div className="flex-1" style={{ display: 'flex', flexDirection: 'column' }}>
+              <select 
+                className="form-input"
+                style={{ width: '100%' }}
+                value={line.productId}
+                onChange={e => updateLine(index, 'productId', e.target.value)}
+              >
+                <option value="">-- الصنف --</option>
+                {products.map(p => <option key={p.id} value={p.id}>{p.name} (متوفر: {p.stock || 0})</option>)}
+              </select>
+              {line.productId && (
+                <span style={{ fontSize: '12px', color: '#16a34a', marginTop: '4px', fontWeight: 'bold' }}>
+                  الكمية المتوفرة في المخزن: {products.find(p => p.id == line.productId)?.stock || 0}
+                </span>
+              )}
+            </div>
             <input 
               type="number" 
               placeholder="الكمية"
