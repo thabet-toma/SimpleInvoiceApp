@@ -58,7 +58,7 @@ app.post('/api/partners', async (req, res) => {
 app.get('/api/products', async (req, res) => {
   try {
     const { tenantId } = req.query;
-    let query = 'SELECT ProductID as id, Name_AR as name, AvgCost as cost, OnlinePrice as price FROM products';
+    let query = 'SELECT ProductID as id, Name_AR as name, AvgCost as cost, OnlinePrice as price, QuantityOnHand as stock FROM products';
     if (tenantId) query += ` WHERE TenantID=${db.escape(tenantId)}`;
     const [rows] = await db.query(query);
     res.json(rows);
@@ -104,8 +104,8 @@ app.post('/api/invoices/sale', async (req, res) => {
 
     const [invResult] = await db.query(
       `INSERT INTO sales_module_invoices 
-      (TenantID, InvoiceNumber, CustomerID, InvoiceDate, InvoiceKind, InvoiceType, CurrencyID, Status, GrandTotal, SubtotalExclTax, InvoiceDiscount, TaxAmount, AmountPaid, ExchangeRate, CreatedAt, UpdatedAt, StockOnPost, BookNumber, DiscountPercent, LicensedDealerNo, PricesIncludeTax, SettlementInvoiceNo, FinancialDocumentNo, AttachedCashAmount, AccountsReceivableAccountID, CashOrBankAccountID, RevenueAccountID, AttachedCashAccountID) 
-      VALUES (?, ?, ?, CURDATE(), 'sale', 'credit', 1, 'draft', ?, ?, 0, 0, 0, 1, NOW(), NOW(), 0, 1, 0, '-', 0, '-', '-', 0, ?, ?, ?, ?)`,
+      (TenantID, InvoiceNumber, CustomerID, InvoiceDate, InvoiceKind, InvoiceType, CurrencyID, Status, GrandTotal, SubtotalExclTax, InvoiceDiscount, TaxAmount, AmountPaid, ExchangeRate, CreatedAt, UpdatedAt, StockOnPost, BookNumber, DiscountPercent, LicensedDealerNo, PricesIncludeTax, SettlementInvoiceNo, FinancialDocumentNo, AttachedCashAmount, AccountsReceivableAccountID, CashOrBankAccountID, RevenueAccountID, AttachedCashAccountID, Notes) 
+      VALUES (?, ?, ?, CURDATE(), 'sale', 'credit', 1, 'draft', ?, ?, 0, 0, 0, 1, NOW(), NOW(), 0, 1, 0, '-', 0, '-', '-', 0, ?, ?, ?, ?, 'قادم من الموقع المبسط')`,
       [tid, invoiceNumber, partnerId, total, total, arAccount, cashAccount, revAccount, cashAccount]
     );
     
@@ -142,8 +142,8 @@ app.post('/api/invoices/purchase', async (req, res) => {
 
     const [invResult] = await db.query(
       `INSERT INTO purchase_invoices 
-      (TenantID, InvoiceNumber, PartnerID, InvoiceDate, CurrencyID, Status, GrandTotal, Subtotal, DiscountAmount, TaxRate, TaxAmount, ShippingCost, ShippingIncluded, ExchangeRate, PaymentType, CreatedAt, UpdatedAt, TaxType, IsPosted, AttachedCashAmount, ReceiptStatus, CashBankAccountID) 
-      VALUES (?, ?, ?, CURDATE(), 1, 'draft', ?, ?, 0, 0, 0, 0, 0, 1, 'credit', NOW(), NOW(), 'inclusive', 0, 0, 'not_receipted', ?)`,
+      (TenantID, InvoiceNumber, PartnerID, InvoiceDate, CurrencyID, Status, GrandTotal, Subtotal, DiscountAmount, TaxRate, TaxAmount, ShippingCost, ShippingIncluded, ExchangeRate, PaymentType, CreatedAt, UpdatedAt, TaxType, IsPosted, AttachedCashAmount, ReceiptStatus, CashBankAccountID, Notes) 
+      VALUES (?, ?, ?, CURDATE(), 1, 'draft', ?, ?, 0, 0, 0, 0, 0, 1, 'credit', NOW(), NOW(), 'inclusive', 0, 0, 'not_receipted', ?, 'قادم من الموقع المبسط')`,
       [tid, invoiceNumber, partnerId, total, total, cashAccount]
     );
     
@@ -165,6 +165,36 @@ app.post('/api/invoices/purchase', async (req, res) => {
   } catch (error) {
     console.error("API ERROR:", error);
     res.status(500).json({ error: error.message, stack: error.stack });
+  }
+});
+
+app.get('/api/invoices/sale', async (req, res) => {
+  try {
+    const { tenantId } = req.query;
+    let query = `
+      SELECT i.InvoiceID as id, i.InvoiceNumber as number, DATE_FORMAT(i.InvoiceDate, '%Y-%m-%d') as date, i.GrandTotal as total, p.Name as partnerName 
+      FROM sales_module_invoices i 
+      LEFT JOIN partners p ON i.CustomerID = p.PartnerID 
+      WHERE i.TenantID=? ORDER BY i.InvoiceID DESC LIMIT 50`;
+    const [rows] = await db.query(query, [tenantId || 6]);
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/invoices/purchase', async (req, res) => {
+  try {
+    const { tenantId } = req.query;
+    let query = `
+      SELECT i.InvoiceID as id, i.InvoiceNumber as number, DATE_FORMAT(i.InvoiceDate, '%Y-%m-%d') as date, i.GrandTotal as total, p.Name as partnerName 
+      FROM purchase_invoices i 
+      LEFT JOIN partners p ON i.PartnerID = p.PartnerID 
+      WHERE i.TenantID=? ORDER BY i.InvoiceID DESC LIMIT 50`;
+    const [rows] = await db.query(query, [tenantId || 6]);
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

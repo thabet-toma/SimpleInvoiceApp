@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { PlusCircle, Save, ArrowRight, Building2 } from 'lucide-react';
+import { PlusCircle, Save, ArrowRight, Building2, Trash2 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -79,6 +79,10 @@ const InvoiceForm = ({ type }: { type: 'sale' | 'purchase' }) => {
   };
 
   const addLine = () => setLines([...lines, { productId: '', quantity: 1, price: 0 }]);
+
+  const removeLine = (index: number) => {
+    setLines(lines.filter((_, i) => i !== index));
+  };
 
   const updateLine = (index: number, field: string, value: any) => {
     const newLines = [...lines];
@@ -178,15 +182,23 @@ const InvoiceForm = ({ type }: { type: 'sale' | 'purchase' }) => {
       {/* Invoice Lines Section */}
       <div className="section-box">
         <h3 className="section-label">الأصناف:</h3>
+        
+        <div className="flex-row line-item" style={{ fontWeight: 'bold', marginBottom: '10px', borderBottom: '2px solid #ddd', paddingBottom: '5px' }}>
+          <div className="flex-1">الصنف</div>
+          <div className="w-80 text-center">الكمية</div>
+          <div className="w-100 text-center">السعر</div>
+          <div style={{ width: '40px' }}></div>
+        </div>
+
         {lines.map((line, index) => (
-          <div key={index} className="flex-row line-item">
+          <div key={index} className="flex-row line-item" style={{ alignItems: 'center' }}>
             <select 
               className="form-input flex-1"
               value={line.productId}
               onChange={e => updateLine(index, 'productId', e.target.value)}
             >
               <option value="">-- الصنف --</option>
-              {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {products.map(p => <option key={p.id} value={p.id}>{p.name} (متوفر: {p.stock || 0})</option>)}
             </select>
             <input 
               type="number" 
@@ -203,9 +215,12 @@ const InvoiceForm = ({ type }: { type: 'sale' | 'purchase' }) => {
               value={line.price}
               onChange={e => updateLine(index, 'price', Number(e.target.value))}
             />
+            <button onClick={() => removeLine(index)} className="btn-text" style={{ color: 'red', width: '40px', padding: '0 10px' }} title="حذف السطر">
+              <Trash2 size={20} />
+            </button>
           </div>
         ))}
-        <button onClick={addLine} className="btn-text">
+        <button onClick={addLine} className="btn-text" style={{ marginTop: '10px' }}>
           <PlusCircle size={18} /> سطر جديد
         </button>
       </div>
