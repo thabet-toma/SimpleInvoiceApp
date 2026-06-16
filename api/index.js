@@ -9,8 +9,8 @@ app.use(express.json());
 
 app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body;
-  if (username === (process.env.APP_USERNAME || 'employee') && password === (process.env.APP_PASSWORD || '123456')) {
-    res.json({ token: 'simple-jwt-token', user: { username, role: 'employee' } });
+  if (username === (process.env.APP_USERNAME || 'admin') && password === (process.env.APP_PASSWORD || '123456')) {
+    res.json({ token: 'simple-jwt-token', user: { username, role: 'admin' } });
   } else {
     res.status(401).json({ error: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
   }
