@@ -1,5 +1,13 @@
 {
   "version": 2,
+  "env": {
+    "DB_HOST": "173.208.138.113",
+    "DB_USER": "smartktra_smartktra",
+    "DB_PASSWORD": "smart@102030",
+    "DB_NAME": "smartktra_smart-ktra",
+    "APP_USERNAME": "admin",
+    "APP_PASSWORD": "123456"
+  },
   "builds": [
     {
       "src": "index.js",
