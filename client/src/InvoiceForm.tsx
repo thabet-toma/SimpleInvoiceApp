@@ -183,7 +183,7 @@ const InvoiceForm = ({ type }: { type: 'sale' | 'purchase' }) => {
       <div className="section-box">
         <h3 className="section-label">الأصناف:</h3>
         
-        <div className="flex-row line-item" style={{ fontWeight: 'bold', marginBottom: '10px', borderBottom: '2px solid #ddd', paddingBottom: '5px' }}>
+        <div className="flex-row line-header" style={{ fontWeight: 'bold', marginBottom: '10px', borderBottom: '2px solid #ddd', paddingBottom: '5px' }}>
           <div className="flex-1">الصنف</div>
           <div className="w-80 text-center">الكمية</div>
           <div className="w-100 text-center">السعر</div>

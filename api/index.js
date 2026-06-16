@@ -198,5 +198,31 @@ app.get('/api/invoices/purchase', async (req, res) => {
   }
 });
 
+app.get('/api/invoices/sale/:id', async (req, res) => {
+  try {
+    const [lines] = await db.query(`
+      SELECT l.Quantity as quantity, l.UnitPrice as price, l.LineTotalExclTax as total, p.Name_AR as productName 
+      FROM sales_module_invoice_lines l 
+      LEFT JOIN products p ON l.ProductID = p.ProductID 
+      WHERE l.InvoiceID=?`, [req.params.id]);
+    res.json(lines);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/invoices/purchase/:id', async (req, res) => {
+  try {
+    const [lines] = await db.query(`
+      SELECT l.Quantity as quantity, l.UnitPrice as price, l.TotalPrice as total, p.Name_AR as productName 
+      FROM purchase_invoice_items l 
+      LEFT JOIN products p ON l.ProductID = p.ProductID 
+      WHERE l.PurchaseInvoiceID=?`, [req.params.id]);
+    res.json(lines);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`API running on port ${PORT}`));
