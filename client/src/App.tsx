@@ -16,9 +16,11 @@ const App = () => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.clear();
     setIsAuthenticated(false);
   };
+
+  const isCustomer = () => localStorage.getItem('role') === 'customer';
 
   return (
     <BrowserRouter>
@@ -33,33 +35,33 @@ const App = () => {
           <Routes>
             <Route 
               path="/login" 
-              element={!isAuthenticated ? <Login onLogin={() => setIsAuthenticated(true)} /> : <Navigate to="/dashboard" />} 
+              element={!isAuthenticated ? <Login onLogin={() => setIsAuthenticated(true)} /> : <Navigate to={isCustomer() ? "/customer-dashboard" : "/dashboard"} />} 
             />
             <Route 
               path="/dashboard" 
-              element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} 
+              element={isAuthenticated && !isCustomer() ? <Dashboard /> : <Navigate to={isCustomer() ? "/customer-dashboard" : "/login"} />} 
             />
             <Route 
               path="/sales" 
-              element={isAuthenticated ? <InvoiceForm type="sale" /> : <Navigate to="/login" />} 
+              element={isAuthenticated && !isCustomer() ? <InvoiceForm type="sale" /> : <Navigate to={isCustomer() ? "/customer-dashboard" : "/login"} />} 
             />
             <Route 
               path="/purchase" 
-              element={isAuthenticated ? <InvoiceForm type="purchase" /> : <Navigate to="/login" />} 
+              element={isAuthenticated && !isCustomer() ? <InvoiceForm type="purchase" /> : <Navigate to={isCustomer() ? "/customer-dashboard" : "/login"} />} 
             />
             <Route 
               path="/prices" 
-              element={isAuthenticated ? <Prices /> : <Navigate to="/login" />} 
+              element={isAuthenticated && !isCustomer() ? <Prices /> : <Navigate to={isCustomer() ? "/customer-dashboard" : "/login"} />} 
             />
             <Route 
               path="/settings" 
-              element={isAuthenticated ? <Settings /> : <Navigate to="/login" />} 
+              element={isAuthenticated && !isCustomer() ? <Settings /> : <Navigate to={isCustomer() ? "/customer-dashboard" : "/login"} />} 
             />
             <Route 
               path="/customer-dashboard" 
-              element={isAuthenticated ? <CustomerDashboard /> : <Navigate to="/login" />} 
+              element={isAuthenticated && isCustomer() ? <CustomerDashboard /> : <Navigate to={!isCustomer() && isAuthenticated ? "/dashboard" : "/login"} />} 
             />
-            <Route path="*" element={<Navigate to={isAuthenticated ? (localStorage.getItem('role') === 'customer' ? "/customer-dashboard" : "/dashboard") : "/login"} />} />
+            <Route path="*" element={<Navigate to={isAuthenticated ? (isCustomer() ? "/customer-dashboard" : "/dashboard") : "/login"} />} />
           </Routes>
         </div>
       </div>
