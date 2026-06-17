@@ -1,4 +1,5 @@
 {
+  "alias": ["simple-invoice-app-8gdy.vercel.app"],
   "rewrites": [
     {
       "source": "/(.*)",
