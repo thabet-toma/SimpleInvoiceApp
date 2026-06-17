@@ -10,7 +10,9 @@ app.use(express.json());
 app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body;
   if (username === (process.env.APP_USERNAME || 'admin') && password === (process.env.APP_PASSWORD || '123456')) {
-    res.json({ token: 'simple-jwt-token', user: { username, role: 'admin' } });
+    res.json({ token: 'simple-jwt-token', user: { username, name: 'مسؤول', role: 'admin' } });
+  } else if (username === 'aaa' && password === '123456') {
+    res.json({ token: 'simple-jwt-token', user: { username: 'aaa', name: 'سائد', role: 'user' } });
   } else {
     res.status(401).json({ error: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
   }
@@ -58,7 +60,7 @@ app.post('/api/partners', async (req, res) => {
 app.get('/api/products', async (req, res) => {
   try {
     const { tenantId } = req.query;
-    let query = 'SELECT ProductID as id, Name_AR as name, AvgCost as cost, OnlinePrice as price, QuantityOnHand as stock FROM products';
+    let query = 'SELECT ProductID as id, Name_AR as name, AvgCost as cost, OnlinePrice as price, (QuantityOnHand + 0) as stock FROM products';
     if (tenantId) query += ` WHERE TenantID=${db.escape(tenantId)}`;
     const [rows] = await db.query(query);
     res.json(rows);
@@ -86,9 +88,10 @@ app.post('/api/products', async (req, res) => {
 
 app.post('/api/invoices/sale', async (req, res) => {
   try {
-    const { partnerId, lines, total, tenantId } = req.body;
+    const { partnerId, lines, total, tenantId, userName } = req.body;
     const tid = tenantId || 6;
     const invoiceNumber = 'SI-' + Date.now();
+    const note = 'قادم من الموقع المبسط' + (userName ? ` بواسطة ${userName}` : '');
     
     // Fetch default accounts for the tenant dynamically
     const [accounts] = await db.query(
@@ -105,8 +108,8 @@ app.post('/api/invoices/sale', async (req, res) => {
     const [invResult] = await db.query(
       `INSERT INTO sales_module_invoices 
       (TenantID, InvoiceNumber, CustomerID, InvoiceDate, InvoiceKind, InvoiceType, CurrencyID, Status, GrandTotal, SubtotalExclTax, InvoiceDiscount, TaxAmount, AmountPaid, ExchangeRate, CreatedAt, UpdatedAt, StockOnPost, BookNumber, DiscountPercent, LicensedDealerNo, PricesIncludeTax, SettlementInvoiceNo, FinancialDocumentNo, AttachedCashAmount, AccountsReceivableAccountID, CashOrBankAccountID, RevenueAccountID, AttachedCashAccountID, Notes) 
-      VALUES (?, ?, ?, CURDATE(), 'sale', 'credit', 1, 'draft', ?, ?, 0, 0, 0, 1, NOW(), NOW(), 0, 1, 0, '-', 0, '-', '-', 0, ?, ?, ?, ?, 'قادم من الموقع المبسط')`,
-      [tid, invoiceNumber, partnerId, total, total, arAccount, cashAccount, revAccount, cashAccount]
+      VALUES (?, ?, ?, CURDATE(), 'sale', 'credit', 1, 'draft', ?, ?, 0, 0, 0, 1, NOW(), NOW(), 0, 1, 0, '-', 0, '-', '-', 0, ?, ?, ?, ?, ?)`,
+      [tid, invoiceNumber, partnerId, total, total, arAccount, cashAccount, revAccount, cashAccount, note]
     );
     
     const invoiceId = invResult.insertId;
@@ -129,9 +132,10 @@ app.post('/api/invoices/sale', async (req, res) => {
 
 app.post('/api/invoices/purchase', async (req, res) => {
   try {
-    const { partnerId, lines, total, tenantId } = req.body;
+    const { partnerId, lines, total, tenantId, userName } = req.body;
     const tid = tenantId || 6;
     const invoiceNumber = 'PI-' + Date.now();
+    const note = 'قادم من الموقع المبسط' + (userName ? ` بواسطة ${userName}` : '');
     
     // Fetch default cash account
     const [accounts] = await db.query(
@@ -143,8 +147,8 @@ app.post('/api/invoices/purchase', async (req, res) => {
     const [invResult] = await db.query(
       `INSERT INTO purchase_invoices 
       (TenantID, InvoiceNumber, PartnerID, InvoiceDate, CurrencyID, Status, GrandTotal, Subtotal, DiscountAmount, TaxRate, TaxAmount, ShippingCost, ShippingIncluded, ExchangeRate, PaymentType, CreatedAt, UpdatedAt, TaxType, IsPosted, AttachedCashAmount, ReceiptStatus, CashBankAccountID, Notes) 
-      VALUES (?, ?, ?, CURDATE(), 1, 'draft', ?, ?, 0, 0, 0, 0, 0, 1, 'credit', NOW(), NOW(), 'inclusive', 0, 0, 'not_receipted', ?, 'قادم من الموقع المبسط')`,
-      [tid, invoiceNumber, partnerId, total, total, cashAccount]
+      VALUES (?, ?, ?, CURDATE(), 1, 'draft', ?, ?, 0, 0, 0, 0, 0, 1, 'credit', NOW(), NOW(), 'inclusive', 0, 0, 'not_receipted', ?, ?)`,
+      [tid, invoiceNumber, partnerId, total, total, cashAccount, note]
     );
     
     const invoiceId = invResult.insertId;

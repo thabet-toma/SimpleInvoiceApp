@@ -102,7 +102,7 @@ const InvoiceForm = ({ type }: { type: 'sale' | 'purchase' }) => {
     
     try {
       await axios.post(`${API_URL}/invoices/${type}`, {
-        partnerId, lines, total, tenantId
+        partnerId, lines, total, tenantId, userName: localStorage.getItem('userName')
       });
       alert('تم حفظ الفاتورة كمسودة بنجاح!');
       navigate('/dashboard');
