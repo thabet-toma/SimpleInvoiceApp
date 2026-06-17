@@ -8,6 +8,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const CustomerDashboard = () => {
   const [points, setPoints] = useState(0);
   const [settings, setSettings] = useState<any>({});
+  const [invoices, setInvoices] = useState<any[]>([]);
   const navigate = useNavigate();
   const userName = localStorage.getItem('userName');
   const partnerId = localStorage.getItem('partnerId');
@@ -22,12 +23,14 @@ const CustomerDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [pointsRes, settingsRes] = await Promise.all([
+      const [pointsRes, settingsRes, invoicesRes] = await Promise.all([
         axios.get(`${API_URL}/customers/${partnerId}/points`),
-        axios.get(`${API_URL}/settings`)
+        axios.get(`${API_URL}/settings`),
+        axios.get(`${API_URL}/customers/${partnerId}/invoices`)
       ]);
       setPoints(pointsRes.data.points);
       setSettings(settingsRes.data);
+      setInvoices(invoicesRes.data);
     } catch (e) {
       console.error(e);
     }
@@ -57,6 +60,31 @@ const CustomerDashboard = () => {
       
       <div className="section-box" style={{ marginTop: '20px', textAlign: 'center' }}>
         <p style={{ color: '#4b5563', fontSize: '1.1rem' }}>يتم احتساب النقاط تلقائياً مع كل عملية شراء جديدة. تواصل مع المبيعات لاستخدام رصيد الخصم في فاتورتك القادمة.</p>
+      </div>
+
+      <div className="section-box" style={{ marginTop: '30px' }}>
+        <h3 style={{ color: '#2563eb', borderBottom: '2px solid #2563eb', paddingBottom: '10px', marginBottom: '15px' }}>فواتيرك السابقة</h3>
+        <div className="table-responsive">
+          <table style={{ width: '100%', textAlign: 'right', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #ddd' }}>
+                <th style={{ padding: '10px' }}>رقم الفاتورة</th>
+                <th style={{ padding: '10px' }}>التاريخ</th>
+                <th style={{ padding: '10px' }}>الإجمالي</th>
+              </tr>
+            </thead>
+            <tbody>
+              {invoices.length === 0 ? <tr><td colSpan={3} style={{ padding: '15px', textAlign: 'center' }}>لا يوجد فواتير حتى الآن</td></tr> : null}
+              {invoices.map(inv => (
+                <tr key={inv.id} style={{ borderBottom: '1px solid #eee' }}>
+                  <td style={{ padding: '10px' }}>{inv.number}</td>
+                  <td style={{ padding: '10px' }}>{inv.date}</td>
+                  <td style={{ padding: '10px', fontWeight: 'bold', color: '#16a34a' }}>{inv.total} ₪</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

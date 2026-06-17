@@ -271,6 +271,18 @@ app.get('/api/customers/:id/points', async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
+app.get('/api/customers/:id/invoices', async (req, res) => {
+  try {
+    const query = `
+      SELECT i.SalesInvoiceID as id, i.InvoiceNumber as number, DATE_FORMAT(i.InvoiceDate, '%Y-%m-%d') as date, i.GrandTotal as total
+      FROM sales_module_invoices i 
+      WHERE i.CustomerID = ? 
+      ORDER BY i.SalesInvoiceID DESC LIMIT 50`;
+    const [rows] = await db.query(query, [req.params.id]);
+    res.json(rows);
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
 app.get('/api/customers/:id/prices', async (req, res) => {
   try {
     const query = `
