@@ -3,6 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './Login';
 import Dashboard from './Dashboard';
 import InvoiceForm from './InvoiceForm';
+import Settings from './Settings';
+import Prices from './Prices';
+import CustomerDashboard from './CustomerDashboard';
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -44,7 +47,19 @@ const App = () => {
               path="/purchase" 
               element={isAuthenticated ? <InvoiceForm type="purchase" /> : <Navigate to="/login" />} 
             />
-            <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
+            <Route 
+              path="/prices" 
+              element={isAuthenticated ? <Prices /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/settings" 
+              element={isAuthenticated ? <Settings /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/customer-dashboard" 
+              element={isAuthenticated ? <CustomerDashboard /> : <Navigate to="/login" />} 
+            />
+            <Route path="*" element={<Navigate to={isAuthenticated ? (localStorage.getItem('role') === 'customer' ? "/customer-dashboard" : "/dashboard") : "/login"} />} />
           </Routes>
         </div>
       </div>

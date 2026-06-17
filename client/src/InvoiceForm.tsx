@@ -12,6 +12,7 @@ const InvoiceForm = ({ type }: { type: 'sale' | 'purchase' }) => {
   const [partners, setPartners] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [partnerId, setPartnerId] = useState('');
+  const [customerPrices, setCustomerPrices] = useState<any>({});
   const [lines, setLines] = useState([{ productId: '', quantity: 1, price: 0 }]);
   const [total, setTotal] = useState(0);
 
@@ -45,6 +46,21 @@ const InvoiceForm = ({ type }: { type: 'sale' | 'purchase' }) => {
     const res = await axios.get(`${API_URL}/partners?type=${type === 'sale' ? 'customer' : 'supplier'}&tenantId=${tenantId}`);
     setPartners(res.data);
     setPartnerId('');
+    setCustomerPrices({});
+  };
+
+  const handlePartnerChange = async (id: string) => {
+    setPartnerId(id);
+    if (!id || type !== 'sale') {
+      setCustomerPrices({});
+      return;
+    }
+    try {
+      const res = await axios.get(`${API_URL}/customers/${id}/prices`);
+      setCustomerPrices(res.data);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const fetchProducts = async () => {
@@ -90,7 +106,11 @@ const InvoiceForm = ({ type }: { type: 'sale' | 'purchase' }) => {
     if (field === 'productId') {
       const prod = products.find(p => p.id == value);
       if (prod) {
-        newLines[index].price = type === 'sale' ? prod.price : (prod.cost || prod.price);
+        if (type === 'sale' && customerPrices[value]) {
+          newLines[index].price = customerPrices[value];
+        } else {
+          newLines[index].price = type === 'sale' ? prod.price : (prod.cost || prod.price);
+        }
       }
     }
     setLines(newLines);
@@ -139,7 +159,7 @@ const InvoiceForm = ({ type }: { type: 'sale' | 'purchase' }) => {
         <select 
           className="form-input"
           value={partnerId} 
-          onChange={e => setPartnerId(e.target.value)}
+          onChange={e => handlePartnerChange(e.target.value)}
         >
           <option value="">-- اختر من القائمة --</option>
           {partners.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -181,10 +201,10 @@ const InvoiceForm = ({ type }: { type: 'sale' | 'purchase' }) => {
 
       {/* Invoice Lines Section */}
       <div className="section-box">
-        <h3 className="section-label">الأصناف:</h3>
+        <h3 className="section-label">المنتجات:</h3>
         
         <div className="flex-row line-header" style={{ fontWeight: 'bold', marginBottom: '10px', borderBottom: '2px solid #ddd', paddingBottom: '5px' }}>
-          <div className="flex-1">الصنف</div>
+          <div className="flex-1">المنتج</div>
           <div className="w-80 text-center">الكمية</div>
           <div className="w-100 text-center">السعر</div>
           <div style={{ width: '40px' }}></div>
@@ -199,7 +219,7 @@ const InvoiceForm = ({ type }: { type: 'sale' | 'purchase' }) => {
                 value={line.productId}
                 onChange={e => updateLine(index, 'productId', e.target.value)}
               >
-                <option value="">-- الصنف --</option>
+                <option value="">-- المنتج --</option>
                 {products.map(p => <option key={p.id} value={p.id}>{p.name} (متوفر: {p.stock || 0})</option>)}
               </select>
               {line.productId && (

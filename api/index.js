@@ -14,6 +14,12 @@ app.post('/api/auth/login', async (req, res) => {
   } else if (username === 'aaa' && password === '123456') {
     res.json({ token: 'simple-jwt-token', user: { username: 'aaa', name: 'سائد', role: 'user' } });
   } else {
+    try {
+      const [customers] = await db.query('SELECT * FROM customer_credentials WHERE username = ? AND password = ?', [username, password]);
+      if (customers.length > 0) {
+        return res.json({ token: 'simple-jwt-token', user: { username, name: username, partnerId: customers[0].partner_id, role: 'customer' } });
+      }
+    } catch (e) { console.error(e); }
     res.status(401).json({ error: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
   }
 });
@@ -115,13 +121,25 @@ app.post('/api/invoices/sale', async (req, res) => {
     const invoiceId = invResult.insertId;
     
     for (const line of lines) {
-      await db.query(
-        `INSERT INTO sales_module_invoice_lines 
-        (TenantID, InvoiceID, ProductID, Quantity, UnitPrice, LineTotalExclTax, LineDiscount, LineTaxAmount, CatalogNo, Unit, Warehouse) 
-        VALUES (?, ?, ?, ?, ?, ?, 0, 0, '-', '-', '-')`,
-        [tid, invoiceId, line.productId, line.quantity, line.price, line.quantity * line.price]
-      );
+      await db.query(`
+        INSERT INTO sales_module_invoice_lines (TenantID, InvoiceID, ProductID, Quantity, UnitPrice, LineTotalExclTax, LineTaxAmount, LineDiscount)
+        VALUES (?, ?, ?, ?, ?, ?, 0, 0)
+      `, [tid, invoiceId, line.productId, line.quantity, line.price, line.quantity * line.price]);
     }
+
+    // Handle Loyalty Points
+    try {
+      const [settingsRows] = await db.query('SELECT setting_key, setting_value FROM app_settings WHERE setting_key = "points_per_1000"');
+      if (settingsRows.length > 0) {
+        const ptsPer1000 = parseFloat(settingsRows[0].setting_value);
+        if (ptsPer1000 > 0) {
+          const pointsEarned = Math.floor(parseFloat(total) / 1000) * ptsPer1000;
+          if (pointsEarned > 0) {
+            await db.query('INSERT INTO customer_loyalty_points (partner_id, points) VALUES (?, ?) ON DUPLICATE KEY UPDATE points = points + ?', [partnerId, pointsEarned, pointsEarned]);
+          }
+        }
+      }
+    } catch (e) { console.error('Points Error', e); }
     
     res.json({ success: true, invoiceId, invoiceNumber });
   } catch (error) {
@@ -226,6 +244,47 @@ app.get('/api/invoices/purchase/:id', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+});
+
+app.get('/api/settings', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT setting_key, setting_value FROM app_settings');
+    const settings = {};
+    rows.forEach(r => settings[r.setting_key] = r.setting_value);
+    res.json(settings);
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.post('/api/settings', async (req, res) => {
+  try {
+    const { points_per_1000, point_value_ils } = req.body;
+    await db.query('INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?', ['points_per_1000', points_per_1000, points_per_1000]);
+    await db.query('INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?', ['point_value_ils', point_value_ils, point_value_ils]);
+    res.json({ success: true });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.get('/api/customers/:id/points', async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT points FROM customer_loyalty_points WHERE partner_id = ?', [req.params.id]);
+    res.json({ points: rows.length > 0 ? rows[0].points : 0 });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.get('/api/customers/:id/prices', async (req, res) => {
+  try {
+    const query = `
+      SELECT l.ProductID as productId, 
+             SUBSTRING_INDEX(GROUP_CONCAT(l.UnitPrice ORDER BY i.SalesInvoiceID DESC), ',', 1) as lastPrice 
+      FROM sales_module_invoice_lines l 
+      JOIN sales_module_invoices i ON l.InvoiceID = i.SalesInvoiceID 
+      WHERE i.CustomerID = ? 
+      GROUP BY l.ProductID`;
+    const [rows] = await db.query(query, [req.params.id]);
+    const priceMap = {};
+    rows.forEach(r => priceMap[r.productId] = parseFloat(r.lastPrice));
+    res.json(priceMap);
+  } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
 const PORT = process.env.PORT || 5000;

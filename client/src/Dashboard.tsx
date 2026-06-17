@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Tag, Building2, X } from 'lucide-react';
+import { ShoppingCart, Tag, Building2, X, Settings as SettingsIcon, List } from 'lucide-react';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -93,6 +93,17 @@ const Dashboard = () => {
         <button className="btn-purchase" onClick={() => navigate('/purchase')}>
           <ShoppingCart size={40} />
           <span>فاتورة مشتريات جديدة</span>
+        </button>
+      </div>
+
+      <div className="dashboard-buttons" style={{ marginTop: '20px' }}>
+        <button className="btn-sale" style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', width: '250px' }} onClick={() => navigate('/prices')}>
+          <List size={40} />
+          <span>أسعار الزبائن</span>
+        </button>
+        <button className="btn-purchase" style={{ background: 'linear-gradient(135deg, #64748b, #475569)', width: '250px' }} onClick={() => navigate('/settings')}>
+          <SettingsIcon size={40} />
+          <span>إعدادات النظام</span>
         </button>
       </div>
 
